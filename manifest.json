@@ -1,0 +1,64 @@
+{
+  "name": "SpinPick — Wheel of Decisions",
+  "short_name": "SpinPick",
+  "description": "Stop overthinking. Spin a wheel and let fate decide. Add your choices, spin, and get an instant answer.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#faf9ff",
+  "theme_color": "#7F77DD",
+  "lang": "en",
+  "categories": ["utilities", "lifestyle", "entertainment"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "SpinPick on mobile"
+    },
+    {
+      "src": "screenshots/desktop.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "SpinPick on desktop"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick spin",
+      "short_name": "Spin",
+      "description": "Jump straight to the wheel",
+      "url": "/?tab=wheel",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

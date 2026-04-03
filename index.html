@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>SpinPick — Wheel of Decisions</title>
+
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7F77DD" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SpinPick" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --purple: #7F77DD;
+      --purple-deep: #534AB7;
+      --purple-dark: #3C3489;
+      --purple-light: #EEEDFE;
+      --purple-mid: #AFA9EC;
+      --teal: #1D9E75;
+      --coral: #D85A30;
+      --blue: #378ADD;
+      --amber: #BA7517;
+      --pink: #D4537E;
+      --green: #639922;
+      --red: #E24B4A;
+      --bg: #faf9ff;
+      --bg2: #f2f1fc;
+      --surface: #ffffff;
+      --text: #1a1830;
+      --text2: #6b6890;
+      --text3: #a09dc0;
+      --border: rgba(127,119,221,0.15);
+      --border2: rgba(127,119,221,0.3);
+      --shadow: 0 10px 28px rgba(61,52,137,0.08);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f0e1a;
+        --bg2: #171626;
+        --surface: #1e1c30;
+        --text: #e8e6ff;
+        --text2: #a19ccf;
+        --text3: #66638c;
+        --border: rgba(127,119,221,0.12);
+        --border2: rgba(127,119,221,0.25);
+        --shadow: 0 10px 28px rgba(0,0,0,0.22);
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      overscroll-behavior: none;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    body.modal-open { overflow: hidden; }
+
+    /* ── Buttons ── */
+    .btn, .spin-btn, .btn-primary, .btn-secondary, .add-btn, .import-btn, .mini-btn {
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s, opacity 0.15s, border-color 0.15s;
+    }
+
+    .spin-btn {
+      width: 100%;
+      max-width: 360px;
+      padding: 15px;
+      background: var(--purple);
+      color: #fff;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+    .spin-btn:hover:not(:disabled) { background: var(--purple-deep); }
+    .spin-btn:active:not(:disabled) { transform: scale(0.985); }
+    .spin-btn:disabled { background: var(--bg2); color: var(--text3); cursor: not-allowed; box-shadow: none; }
+
+    .btn-primary { background: var(--purple); color: #fff; }
+    .btn-primary:hover { background: var(--purple-deep); }
+
+    .btn-secondary, .mini-btn, .add-btn, .import-btn {
+      background: var(--surface);
+      color: var(--text);
+      border: 0.5px solid var(--border2);
+    }
+    .btn-secondary:hover, .mini-btn:hover, .add-btn:hover, .import-btn:hover {
+      background: var(--purple-light);
+      border-color: var(--purple-mid);
+      color: var(--purple-dark);
+    }
+    @media (prefers-color-scheme: dark) {
+      .btn-secondary:hover, .mini-btn:hover, .add-btn:hover, .import-btn:hover {
+        background: #26215C;
+        color: var(--purple-mid);
+      }
+    }
+
+    .btn-primary, .btn-secondary, .mini-btn, .add-btn, .import-btn {
+      padding: 11px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .btn-primary:active, .btn-secondary:active, .mini-btn:active, .add-btn:active, .import-btn:active { transform: scale(0.985); }
+    .mini-btn:disabled { background: var(--bg2); color: var(--text3); cursor: not-allowed; border-color: var(--border); }
+
+    /* ── App shell ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: 100dvh;
+      overflow: hidden;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      padding-top: calc(12px + env(safe-area-inset-top, 0px));
+      background: var(--surface);
+      border-bottom: 0.5px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .header-logo { display: flex; align-items: center; gap: 8px; }
+    .header-icon { width: 30px; height: 30px; background: var(--purple); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+    .header-icon svg { width: 17px; height: 17px; }
+    .header-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--text); }
+    .header-count { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--purple-light); color: var(--purple-dark); }
+    @media (prefers-color-scheme: dark) {
+      .header-count { background: #26215C; color: var(--purple-mid); }
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar { display: flex; background: var(--surface); border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+    .tab-btn {
+      flex: 1; padding: 10px 4px; background: none; border: none;
+      font-size: 12px; color: var(--text3); cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      transition: color 0.15s;
+    }
+    .tab-btn.active { color: var(--purple); }
+    .tab-btn .tab-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--purple); opacity: 0; transition: opacity 0.15s; }
+    .tab-btn.active .tab-dot { opacity: 1; }
+
+    /* ── Panels ── */
+    .panel { display: none; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .panel.active { display: flex; flex-direction: column; }
+    #panel-wheel { align-items: center; padding: 16px; gap: 14px; padding-bottom: calc(16px + var(--safe-bottom)); }
+    #panel-choices, #panel-history, #panel-settings { padding: 16px; gap: 10px; padding-bottom: calc(16px + var(--safe-bottom)); }
+
+    /* ── Wheel ── */
+    .wheel-wrap { position: relative; width: min(78vw, 320px); height: min(78vw, 320px); flex-shrink: 0; }
+    .wheel-pointer {
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 13px solid transparent; border-right: 13px solid transparent;
+      border-top: 28px solid var(--purple);
+      z-index: 3; filter: drop-shadow(0 2px 6px rgba(83,74,183,0.4));
+    }
+    #wheelCanvas, #wheelCanvasDesktop { width: 100%; height: 100%; border-radius: 50%; display: block; }
+
+    .wheel-actions { width: 100%; max-width: 360px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .wheel-help { font-size: 12px; color: var(--text2); text-align: center; }
+
+    .dense-note {
+      display: none; font-size: 12px; color: var(--text2); text-align: center;
+      padding: 8px 10px; background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: 12px; width: 100%; max-width: 360px;
+    }
+    .dense-note.show { display: block; }
+
+    /* ── Result card ── */
+    .result-card {
+      width: 100%; max-width: 360px; background: var(--purple-light);
+      border-radius: var(--radius-sm); padding: 12px 16px; text-align: center;
+      display: none; border: 0.5px solid var(--purple-mid);
+    }
+    @media (prefers-color-scheme: dark) { .result-card { background: #26215C; border-color: #3C3489; } }
+    .result-card.show { display: block; }
+    .result-label { font-size: 11px; color: var(--purple-dark); margin-bottom: 2px; }
+    @media (prefers-color-scheme: dark) { .result-label { color: var(--purple-mid); } }
+    .result-winner { font-family: 'DM Serif Display', serif; font-size: 26px; color: var(--purple-dark); word-break: break-word; }
+    @media (prefers-color-scheme: dark) { .result-winner { color: #CECBF6; } }
+
+    /* ── Choices ── */
+    .section-label { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; }
+    .choices-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .choice-item {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface); border-radius: var(--radius-sm);
+      padding: 10px 12px; border: 0.5px solid var(--border);
+      transition: border-color 0.15s;
+    }
+    .choice-item:hover { border-color: var(--border2); }
+    .choice-swatch { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+    .choice-name { flex: 1; font-size: 14px; color: var(--text); word-break: break-word; cursor: pointer; min-width: 0; }
+    .choice-edit-input {
+      flex: 1; min-width: 0; padding: 7px 9px; border-radius: 8px;
+      border: 0.5px solid var(--purple-mid); background: var(--bg);
+      color: var(--text); outline: none; font-size: 14px;
+    }
+    .choice-rm, .choice-edit, .choice-save, .choice-cancel {
+      background: none; border: none; color: var(--text3); cursor: pointer;
+      font-size: 14px; padding: 4px 6px; border-radius: 6px; line-height: 1;
+      transition: color 0.1s, background 0.1s; flex-shrink: 0;
+    }
+    .choice-edit:hover, .choice-save:hover, .choice-cancel:hover { color: var(--purple); background: rgba(127,119,221,0.08); }
+    .choice-rm:hover { color: var(--red); background: rgba(226,75,74,0.08); }
+    .choice-save { color: var(--green); }
+    .choice-save:hover { color: var(--green); background: rgba(99,153,34,0.12); }
+    .choice-cancel:hover { color: var(--red); background: rgba(226,75,74,0.08); }
+
+    /* ── Add / import ── */
+    .add-stack { display: grid; gap: 8px; }
+    .add-row, .import-row { display: flex; gap: 8px; }
+    .add-input {
+      flex: 1; padding: 10px 13px; font-size: 14px; border-radius: var(--radius-sm);
+      background: var(--surface); border: 0.5px solid var(--border2);
+      color: var(--text); outline: none; transition: border-color 0.15s;
+    }
+    .add-input:focus { border-color: var(--purple); }
+    .add-input::placeholder { color: var(--text3); }
+
+    /* ── Templates ── */
+    .templates-section { display: flex; flex-direction: column; gap: 8px; }
+    .templates-grid { display: flex; gap: 7px; flex-wrap: wrap; }
+    .template-pill {
+      font-size: 12px; padding: 5px 11px; border-radius: 20px;
+      border: 0.5px solid var(--border2); background: var(--surface);
+      color: var(--purple); cursor: pointer; transition: all 0.15s; font-weight: 700;
+    }
+    .template-pill:hover { background: var(--purple-light); border-color: var(--purple-mid); }
+    @media (prefers-color-scheme: dark) { .template-pill:hover { background: #26215C; } }
+
+    /* ── History ── */
+    .history-list { display: flex; flex-direction: column; gap: 6px; }
+    .hist-item {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface); border-radius: var(--radius-sm);
+      padding: 10px 12px; border: 0.5px solid var(--border);
+    }
+    .hist-swatch { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; }
+    .hist-winner { flex: 1; font-size: 14px; font-weight: 700; color: var(--text); word-break: break-word; min-width: 0; }
+    .hist-time { font-size: 11px; color: var(--text3); }
+    .hist-spin-num { font-size: 11px; padding: 2px 7px; background: var(--bg2); color: var(--text2); border-radius: 10px; flex-shrink: 0; }
+
+    .history-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; padding: 40px; }
+    .history-empty-icon { width: 44px; height: 44px; border-radius: 50%; background: var(--bg2); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+    .hist-empty-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .hist-empty-sub { font-size: 13px; color: var(--text2); }
+
+    /* ── Settings ── */
+    .settings-group { background: var(--surface); border-radius: var(--radius-sm); border: 0.5px solid var(--border); margin-bottom: 14px; overflow: hidden; }
+    .settings-group-label { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; padding: 12px 14px 6px; }
+    .setting-row { display: flex; align-items: center; padding: 12px 14px; border-top: 0.5px solid var(--border); gap: 12px; }
+    .setting-row:first-of-type { border-top: none; }
+    .setting-info { flex: 1; min-width: 0; }
+    .setting-name { font-size: 14px; color: var(--text); font-weight: 500; }
+    .setting-desc { font-size: 11px; color: var(--text3); margin-top: 1px; }
+    .toggle { width: 42px; height: 24px; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s, border-color 0.2s; flex-shrink: 0; }
+    .toggle.on { background: var(--purple); border-color: var(--purple); }
+    .toggle::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: left 0.2s; }
+    .toggle.on::after { left: 21px; }
+    .select-ctrl { padding: 7px 10px; font-size: 13px; cursor: pointer; max-width: 130px; border-radius: var(--radius-sm); background: var(--surface); border: 0.5px solid var(--border2); color: var(--text); outline: none; }
+    .select-ctrl:focus { border-color: var(--purple); }
+    .credits { text-align: center; padding: 8px; font-size: 11px; color: var(--text3); }
+
+    /* ── Winner overlay ── */
+    #winnerOverlay, #pasteModal {
+      display: none; position: fixed; inset: 0; z-index: 80;
+      background: rgba(0,0,0,0.55); align-items: center; justify-content: center; padding: 24px;
+    }
+    #winnerOverlay.show, #pasteModal.show { display: flex; }
+
+    .winner-modal, .paste-modal-card {
+      background: var(--surface); border-radius: 24px; border: 0.5px solid var(--border2);
+      padding: 28px; width: 100%; max-width: 360px; text-align: center;
+      animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both; box-shadow: var(--shadow);
+    }
+    .paste-modal-card { text-align: left; }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.85) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+    .wm-star { width: 60px; height: 60px; background: var(--purple-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    @media (prefers-color-scheme: dark) { .wm-star { background: #26215C; } }
+    .wm-star svg { width: 30px; height: 30px; }
+    .wm-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+    .wm-winner { font-family: 'DM Serif Display', serif; font-size: 34px; color: var(--text); margin-bottom: 20px; line-height: 1.1; word-break: break-word; }
+    .wm-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+    .wm-stat { background: var(--bg2); border-radius: 10px; padding: 10px; }
+    .wm-stat-val { font-size: 18px; font-weight: 700; color: var(--text); }
+    .wm-stat-label { font-size: 11px; color: var(--text2); }
+    .wm-actions, .paste-modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .wm-btn { padding: 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s; }
+    .wm-btn.secondary { background: var(--bg2); color: var(--text); border: 0.5px solid var(--border2); }
+    .wm-btn.primary { background: var(--purple); color: #fff; }
+    .wm-btn:active { transform: scale(0.985); }
+
+    .paste-modal-title { font-family: 'DM Serif Display', serif; font-size: 28px; line-height: 1.1; margin-bottom: 6px; color: var(--text); }
+    .paste-modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 14px; }
+    .import-textarea {
+      width: 100%; min-height: 88px; padding: 10px 12px; resize: vertical; font-size: 13px;
+      line-height: 1.45; border-radius: var(--radius-sm); background: var(--surface);
+      border: 0.5px solid var(--border2); color: var(--text); outline: none;
+    }
+    .import-textarea:focus { border-color: var(--purple); }
+    .import-textarea::placeholder { color: var(--text3); }
+
+    /* ── Confetti ── */
+    #confettiCanvas { position: fixed; inset: 0; z-index: 75; pointer-events: none; }
+
+    /* ── Desktop layout ── */
+    @media (min-width: 700px) {
+      #app { flex-direction: row; max-height: 100dvh; }
+
+      .sidebar {
+        width: 320px; flex-shrink: 0; border-right: 0.5px solid var(--border);
+        display: flex; flex-direction: column; overflow-y: auto; height: 100%; background: var(--surface);
+      }
+      .sidebar-header { padding: 20px 20px 12px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+      .sidebar-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+      .sidebar-logo-icon { width: 34px; height: 34px; background: var(--purple); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+      .sidebar-logo-icon svg { width: 19px; height: 19px; }
+      .sidebar-logo-text { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); }
+      .sidebar-body { padding: 14px 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+      .main-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+      .main-col .app-header, .main-col .tab-bar { display: none; }
+
+      .main-wheel-area {
+        flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        padding: 32px; gap: 20px; overflow-y: auto;
+      }
+      .wheel-wrap { width: min(50vw - 150px, 360px); height: min(50vw - 150px, 360px); }
+
+      .main-history-bar {
+        border-top: 0.5px solid var(--border); padding: 12px 20px;
+        background: var(--surface); flex-shrink: 0;
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      }
+      .mhb-label { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
+      .mhb-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+      .mhb-pill { font-size: 12px; padding: 4px 10px; background: var(--bg2); border-radius: 20px; color: var(--text2); border: 0.5px solid var(--border); }
+      .mhb-pill strong { color: var(--purple); }
+
+      #panel-wheel, #panel-choices, #panel-history, #panel-settings { display: none !important; }
+      .sidebar { display: flex !important; }
+    }
+
+    @media (max-width: 699px) {
+      .sidebar { display: none; }
+      .main-col { display: contents; }
+      .main-wheel-area { display: none !important; }
+      .main-history-bar { display: none; }
+      #panel-wheel { display: flex; }
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    .choices-toolbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .choices-toolbar-right { display: flex; gap: 6px; }
+    .danger-mini {
+      padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 700;
+      border: 0.5px solid rgba(226,75,74,0.3); background: none;
+      color: var(--red); cursor: pointer; transition: background 0.15s;
+    }
+    .danger-mini:hover { background: rgba(226,75,74,0.08); }
+    .danger-mini:active { transform: scale(0.985); }
+  </style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas"></canvas>
+
+  <div id="winnerOverlay">
+    <div class="winner-modal">
+      <div class="wm-star">
+        <svg viewBox="0 0 30 30" fill="none"><path d="M15 4L17.8 11H25.5L19.4 15.4L21.8 23L15 18.7L8.2 23L10.6 15.4L4.5 11H12.2Z" fill="#7F77DD"/></svg>
+      </div>
+      <div class="wm-label">the wheel has spoken</div>
+      <div class="wm-winner" id="overlayWinner">—</div>
+      <div class="wm-stats">
+        <div class="wm-stat"><div class="wm-stat-val" id="overlaySpin">1</div><div class="wm-stat-label">spin #</div></div>
+        <div class="wm-stat"><div class="wm-stat-val" id="overlayProb">1 in 6</div><div class="wm-stat-label">probability</div></div>
+      </div>
+      <div class="wm-actions">
+        <button class="wm-btn secondary" onclick="closeOverlay()">Keep wheel</button>
+        <button class="wm-btn primary" id="removeAndSpinBtn" onclick="removeAndSpin()">Remove &amp; spin</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="pasteModal">
+    <div class="paste-modal-card">
+      <div class="paste-modal-title">Paste choices</div>
+      <div class="paste-modal-sub">Use commas, new lines, or both. Duplicates removed automatically.</div>
+      <textarea id="pasteInput" class="import-textarea" placeholder="Pizza&#10;Sushi&#10;Tacos&#10;or: Pizza, Sushi, Tacos"></textarea>
+      <div class="paste-modal-actions" style="margin-top:12px">
+        <button class="btn-secondary" onclick="closePasteModal()">Cancel</button>
+        <button class="btn-primary" onclick="importChoicesFromModal()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app">
+    <!-- ── Desktop sidebar ── -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">
+            <svg viewBox="0 0 19 19" fill="none"><circle cx="9.5" cy="9.5" r="8" stroke="white" stroke-width="1.8"/><line x1="9.5" y1="2" x2="9.5" y2="9.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/><line x1="9.5" y1="9.5" x2="15" y2="12.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/><circle cx="9.5" cy="9.5" r="2.5" fill="white"/></svg>
+          </div>
+          <div class="sidebar-logo-text">SpinPick</div>
+        </div>
+
+        <div class="add-stack">
+          <div class="add-row">
+            <input class="add-input" id="sidebarInput" placeholder="Add a choice…" onkeydown="if(event.key==='Enter') addChoice('sidebar')" />
+            <button class="add-btn" onclick="addChoice('sidebar')">Add</button>
+          </div>
+          <div class="import-row">
+            <button class="import-btn" style="flex:1" onclick="openPasteModal()">Paste list</button>
+            <button class="import-btn" style="flex:1" onclick="shuffleChoices()">Shuffle</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-body">
+        <div class="choices-toolbar">
+          <div class="section-label">Choices</div>
+          <div class="choices-toolbar-right">
+            <button class="danger-mini" onclick="clearChoices()">Clear all</button>
+          </div>
+        </div>
+        <div class="choices-list" id="sidebarChoices"></div>
+
+        <div class="templates-section">
+          <div class="section-label">Templates</div>
+          <div class="templates-grid" id="sidebarTemplates"></div>
+        </div>
+
+        <hr style="border:none;border-top:0.5px solid var(--border);margin:4px 0"/>
+
+        <div class="section-label">Stats</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Total spins</span><span id="sbStatSpins" style="font-weight:700">0</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Choices</span><span id="sbStatChoices" style="font-weight:700">0</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)">Most picked</span><span id="sbStatMost" style="font-weight:700;color:var(--purple)">—</span></div>
+        </div>
+
+        <div class="credits" style="margin-top:auto;padding-top:16px">SpinPick · v1.1</div>
+      </div>
+    </div>
+
+    <!-- ── Main column ── -->
+    <div class="main-col">
+      <!-- Mobile header -->
+      <header class="app-header">
+        <div class="header-logo">
+          <div class="header-icon">
+            <svg viewBox="0 0 17 17" fill="none"><circle cx="8.5" cy="8.5" r="7" stroke="white" stroke-width="1.6"/><line x1="8.5" y1="2" x2="8.5" y2="8.5" stroke="white" stroke-width="1.6" stroke-linecap="round"/><line x1="8.5" y1="8.5" x2="13" y2="11" stroke="white" stroke-width="1.6" stroke-linecap="round"/><circle cx="8.5" cy="8.5" r="2.2" fill="white"/></svg>
+          </div>
+          <span class="header-title">SpinPick</span>
+        </div>
+        <div class="header-count" id="choiceCount">6 choices</div>
+      </header>
+
+      <nav class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('wheel', this)" id="tab-wheel">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><line x1="8" y1="2.5" x2="8" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="8" y1="8" x2="12" y2="10.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Wheel
+          <div class="tab-dot"></div>
+        </button>
+        <button class="tab-btn" onclick="switchTab('choices', this)" id="tab-choices">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="4" width="12" height="1.3" rx="0.65" fill="currentColor"/><rect x="2" y="7.4" width="9" height="1.3" rx="0.65" fill="currentColor"/><rect x="2" y="10.7" width="7" height="1.3" rx="0.65" fill="currentColor"/></svg>
+          Choices
+          <div class="tab-dot"></div>
+        </button>
+        <button class="tab-btn" onclick="switchTab('history', this)" id="tab-history">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5.5" stroke="currentColor" stroke-width="1.3"/><line x1="8" y1="5" x2="8" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="8" y1="8" x2="10.5" y2="10.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          History
+          <div class="tab-dot"></div>
+        </button>
+        <button class="tab-btn" onclick="switchTab('settings', this)" id="tab-settings">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.5 3.5l1.1 1.1M11.4 11.4l1.1 1.1M12.5 3.5l-1.1 1.1M4.6 11.4l-1.1 1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          Settings
+          <div class="tab-dot"></div>
+        </button>
+      </nav>
+
+      <!-- Wheel panel (mobile) -->
+      <div class="panel active" id="panel-wheel">
+        <div class="wheel-wrap">
+          <div class="wheel-pointer"></div>
+          <canvas id="wheelCanvas" width="700" height="700"></canvas>
+        </div>
+        <div class="dense-note" id="denseNoteMobile">Labels hidden on crowded wheels — all choices still included.</div>
+        <div class="result-card" id="resultCard">
+          <div class="result-label">last pick</div>
+          <div class="result-winner" id="resultText">—</div>
+        </div>
+        <button class="spin-btn" id="spinBtn" onclick="spin()">Spin the wheel</button>
+        <div class="wheel-actions">
+          <button class="btn-secondary" onclick="shuffleChoices()">Shuffle</button>
+          <button class="btn-secondary" onclick="openPasteModal()">Paste list</button>
+        </div>
+        <div class="wheel-help">Tap Choices to edit, rename, or remove entries.</div>
+      </div>
+
+      <!-- Choices panel (mobile) -->
+      <div class="panel" id="panel-choices">
+        <div class="choices-toolbar">
+          <div class="section-label">On the wheel</div>
+          <div class="choices-toolbar-right">
+            <button class="danger-mini" onclick="clearChoices()">Clear all</button>
+          </div>
+        </div>
+        <div class="choices-list" id="mobileChoices"></div>
+
+        <div class="add-stack">
+          <div class="add-row">
+            <input class="add-input" id="mobileInput" placeholder="Add a choice…" onkeydown="if(event.key==='Enter') addChoice('mobile')" />
+            <button class="add-btn" onclick="addChoice('mobile')">Add</button>
+          </div>
+          <div class="import-row">
+            <button class="import-btn" style="flex:1" onclick="openPasteModal()">Paste list</button>
+            <button class="import-btn" style="flex:1" onclick="shuffleChoices()">Shuffle</button>
+          </div>
+        </div>
+
+        <div class="templates-section">
+          <div class="section-label">Templates</div>
+          <div class="templates-grid" id="mobileTemplates"></div>
+        </div>
+      </div>
+
+      <!-- History panel (mobile) -->
+      <div class="panel" id="panel-history">
+        <div class="section-label">Spin history</div>
+        <div id="historyContent"></div>
+      </div>
+
+      <!-- Settings panel (mobile) -->
+      <div class="panel" id="panel-settings">
+        <div class="settings-group">
+          <div class="settings-group-label">Spin behaviour</div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Show winner overlay</div><div class="setting-desc">Full-screen modal when the wheel stops</div></div>
+            <div class="toggle on" id="togOverlay" onclick="toggleSetting('overlay')"></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Confetti animation</div><div class="setting-desc">Celebration burst on every win</div></div>
+            <div class="toggle on" id="togConfetti" onclick="toggleSetting('confetti')"></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Remove winner after spin</div><div class="setting-desc">Elimination mode for brackets</div></div>
+            <div class="toggle" id="togRemove" onclick="toggleSetting('remove')"></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Spin duration</div><div class="setting-desc">How long the wheel spins</div></div>
+            <select class="select-ctrl" id="spinDuration" onchange="handleSpinDurationChange()">
+              <option value="2000">Fast</option>
+              <option value="3500" selected>Normal</option>
+              <option value="5000">Slow</option>
+              <option value="8000">Dramatic</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <div class="settings-group-label">Data</div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Shuffle current choices</div><div class="setting-desc">Same items, different order</div></div>
+            <button class="mini-btn" onclick="shuffleChoices()">Shuffle</button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Paste / import choices</div><div class="setting-desc">Add many choices at once</div></div>
+            <button class="mini-btn" onclick="openPasteModal()">Paste</button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Clear all choices</div><div class="setting-desc">Removes all options from the wheel</div></div>
+            <button class="mini-btn" style="color:var(--red)" onclick="clearChoices()">Clear</button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Clear spin history</div><div class="setting-desc">Wipes the history log</div></div>
+            <button class="mini-btn" onclick="clearHistory()">Clear</button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info"><div class="setting-name">Reset app</div><div class="setting-desc">Restore default choices and clear history</div></div>
+            <button class="mini-btn" style="color:var(--purple)" onclick="resetApp()">Reset</button>
+          </div>
+        </div>
+        <div class="credits">SpinPick · v1.1 · Works offline</div>
+      </div>
+
+      <!-- Desktop wheel area -->
+      <div class="main-wheel-area" id="desktopWheelArea">
+        <div class="wheel-wrap">
+          <div class="wheel-pointer"></div>
+          <canvas id="wheelCanvasDesktop" width="700" height="700"></canvas>
+        </div>
+        <div class="dense-note" id="denseNoteDesktop">Labels hidden on crowded wheels — all choices still included.</div>
+        <div class="result-card" id="resultCardDesktop">
+          <div class="result-label">last pick</div>
+          <div class="result-winner" id="resultTextDesktop">—</div>
+        </div>
+        <button class="spin-btn" id="spinBtnDesktop" onclick="spin()">Spin the wheel</button>
+        <div class="wheel-actions">
+          <button class="btn-secondary" onclick="shuffleChoices()">Shuffle</button>
+          <button class="btn-secondary" onclick="openPasteModal()">Paste list</button>
+        </div>
+        <div class="wheel-help">Click a label in the sidebar to rename it.</div>
+      </div>
+
+      <div class="main-history-bar" id="desktopHistoryBar">
+        <span class="mhb-label">Recent</span>
+        <div class="mhb-pills" id="desktopHistoryPills"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = [
+      '#7F77DD','#1D9E75','#D85A30','#378ADD','#BA7517','#D4537E',
+      '#639922','#E24B4A','#534AB7','#0F6E56','#993C1D','#185FA5'
+    ];
+
+    const DEFAULT_CHOICES = ['Pizza','Sushi','Tacos','Burgers','Pasta','Ramen'];
+
+    const TEMPLATES = [
+      { label: 'Lunch spots', choices: ['Pizza','Sushi','Tacos','Burgers','Pasta','Ramen'] },
+      { label: 'Weekend plans', choices: ['Cinema','Hiking','Board games','Cooking','Museum','Beach'] },
+      { label: 'Movie genres', choices: ['Action','Comedy','Horror','Sci-fi','Romance','Documentary'] },
+      { label: 'Drinks', choices: ['Coffee','Tea','Juice','Smoothie','Water','Soda'] },
+    ];
+
+    const SETTINGS_KEY = 'sp_settings';
+    const DEFAULT_SETTINGS = { overlay: true, confetti: true, remove: false, spinDuration: '3500' };
+
+    let choices = JSON.parse(localStorage.getItem('sp_choices') || JSON.stringify(DEFAULT_CHOICES));
+    let history = JSON.parse(localStorage.getItem('sp_history') || '[]');
+    let spinning = false;
+    let wheelAngle = 0;
+    let totalSpins = parseInt(localStorage.getItem('sp_spins') || '0', 10);
+    let winnerCounts = JSON.parse(localStorage.getItem('sp_counts') || '{}');
+    let isDesktop = window.innerWidth >= 700;
+    let editingChoiceIndex = null;
+    let settings = loadSettings();
+    let lastWinnerIndex = null;
+    let labelSuppressed = false;
+
+    function loadSettings() {
+      try { return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') }; }
+      catch { return { ...DEFAULT_SETTINGS }; }
+    }
+
+    function save() {
+      localStorage.setItem('sp_choices', JSON.stringify(choices));
+      localStorage.setItem('sp_history', JSON.stringify(history));
+      localStorage.setItem('sp_spins', String(totalSpins));
+      localStorage.setItem('sp_counts', JSON.stringify(winnerCounts));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+        .replaceAll('"','&quot;').replaceAll("'",'&#39;');
+    }
+
+    function normalizeChoice(value) { return String(value || '').replace(/\s+/g,' ').trim(); }
+
+    function hasDuplicate(value, ignoreIndex = -1) {
+      const normalized = normalizeChoice(value).toLowerCase();
+      return choices.some((c,i) => i !== ignoreIndex && normalizeChoice(c).toLowerCase() === normalized);
+    }
+
+    function uniqueList(list) {
+      const seen = new Set(), out = [];
+      for (const item of list) {
+        const clean = normalizeChoice(item);
+        if (!clean) continue;
+        const key = clean.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(clean);
+      }
+      return out;
+    }
+
+    function getActiveCanvas() {
+      return document.getElementById(isDesktop ? 'wheelCanvasDesktop' : 'wheelCanvas');
+    }
+
+    function getContrastTextColor(hex) {
+      const c = hex.replace('#','');
+      const r = parseInt(c.substring(0,2),16), g = parseInt(c.substring(2,4),16), b = parseInt(c.substring(4,6),16);
+      return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.62 ? '#1a1830' : 'rgba(255,255,255,0.97)';
+    }
+
+    function drawWheel(canvas, angle) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width, H = canvas.height, cx = W/2, cy = H/2, r = cx - 10;
+      const n = choices.length;
+      ctx.clearRect(0,0,W,H);
+      labelSuppressed = false;
+
+      if (n === 0) {
+        ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI);
+        ctx.fillStyle = '#b7b4d3'; ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = "700 28px 'DM Sans', sans-serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('No choices', cx, cy - 10);
+        ctx.font = "500 17px 'DM Sans', sans-serif";
+        ctx.fillText('Add at least 1', cx, cy + 24);
+        return;
+      }
+
+      if (n === 1) {
+        ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI);
+        ctx.fillStyle = COLORS[0]; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 2; ctx.stroke();
+        const maxTextW = r * 1.5;
+        let fontSize = 22, label = choices[0];
+        ctx.save();
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = getContrastTextColor(COLORS[0]);
+        ctx.shadowColor = 'rgba(0,0,0,0.20)'; ctx.shadowBlur = 3;
+        while (fontSize >= 12) {
+          ctx.font = `700 ${fontSize}px 'DM Sans', sans-serif`;
+          if (ctx.measureText(label).width <= maxTextW) break;
+          fontSize -= 1;
+        }
+        ctx.font = `700 ${fontSize}px 'DM Sans', sans-serif`;
+        if (ctx.measureText(label).width > maxTextW) {
+          while (label.length > 1) {
+            label = label.slice(0,-1);
+            if (ctx.measureText(label + '…').width <= maxTextW) { label += '…'; break; }
+          }
+        }
+        ctx.fillText(label, cx, cy);
+        ctx.restore();
+
+        ctx.beginPath(); ctx.arc(cx,cy,30,0,2*Math.PI);
+        ctx.fillStyle = '#fff'; ctx.fill();
+        ctx.strokeStyle = '#7F77DD'; ctx.lineWidth = 4; ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx,cy,11,0,2*Math.PI);
+        ctx.fillStyle = '#7F77DD'; ctx.fill();
+        return;
+      }
+
+      const slice = (2*Math.PI) / n;
+
+      choices.forEach((choice,i) => {
+        const start = angle + i*slice - Math.PI/2;
+        const end = start + slice;
+        const mid = start + slice/2;
+        const fill = COLORS[i % COLORS.length];
+
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+        ctx.fillStyle = fill; ctx.fill();
+
+        if (lastWinnerIndex === i) {
+          ctx.save(); ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,end); ctx.closePath();
+          ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill(); ctx.restore();
+        }
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 2; ctx.stroke();
+
+        const minSliceForText = 0.32;
+        if (slice < minSliceForText || n > 14) { labelSuppressed = true; return; }
+
+        const textRadius = r - 34;
+        const usableArcLength = Math.max(0, (textRadius * slice) - 24);
+        if (usableArcLength < 26) { labelSuppressed = true; return; }
+
+        let fontSize = n >= 11 ? 12 : n >= 8 ? 14 : 16;
+        let label = choice, fits = false;
+
+        ctx.save();
+        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r-6,start,end); ctx.closePath(); ctx.clip();
+
+        while (fontSize >= 10) {
+          ctx.font = `700 ${fontSize}px 'DM Sans', sans-serif`;
+          if (ctx.measureText(label).width <= usableArcLength) { fits = true; break; }
+          fontSize -= 1;
+        }
+
+        ctx.font = `700 ${fontSize}px 'DM Sans', sans-serif`;
+        if (!fits) {
+          let truncated = choice;
+          while (truncated.length > 1) {
+            truncated = truncated.slice(0,-1);
+            label = truncated + '…';
+            if (ctx.measureText(label).width <= usableArcLength) { fits = true; break; }
+          }
+        }
+
+        if (!fits) { labelSuppressed = true; ctx.restore(); return; }
+
+        ctx.translate(cx,cy); ctx.rotate(mid);
+        ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = getContrastTextColor(fill);
+        ctx.shadowColor = 'rgba(0,0,0,0.20)'; ctx.shadowBlur = 3;
+        ctx.fillText(label, textRadius, 0);
+        ctx.restore();
+      });
+
+      ctx.beginPath(); ctx.arc(cx,cy,30,0,2*Math.PI);
+      ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.strokeStyle = '#7F77DD'; ctx.lineWidth = 4; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx,cy,11,0,2*Math.PI);
+      ctx.fillStyle = '#7F77DD'; ctx.fill();
+
+      if (n > 10) {
+        ctx.fillStyle = 'rgba(26,24,48,0.72)';
+        ctx.font = "700 13px 'DM Sans', sans-serif";
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`${n}`, cx, cy - 2);
+      }
+    }
+
+    function drawAll() {
+      drawWheel(getActiveCanvas(), wheelAngle);
+      updateDenseNotes();
+    }
+
+    function updateDenseNotes() {
+      const crowded = labelSuppressed || choices.length > 10;
+      ['denseNoteMobile','denseNoteDesktop'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('show', crowded && choices.length > 0);
+      });
+    }
+
+    // Spin requires >= 1 choice; overlay "Remove & spin" requires >= 2 remaining after removal
+    function setSpinButtonsState() {
+      const disabled = spinning || choices.length < 1;
+      ['spinBtn','spinBtnDesktop'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = disabled;
+      });
+    }
+
+    function hideResultCards() {
+      document.getElementById('resultCard')?.classList.remove('show');
+      document.getElementById('resultCardDesktop')?.classList.remove('show');
+    }
+
+    function showResultCards(winner) {
+      ['resultText','resultTextDesktop'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = winner;
+      });
+      document.getElementById('resultCard')?.classList.add('show');
+      document.getElementById('resultCardDesktop')?.classList.add('show');
+    }
+
+    function syncSettingsUI() {
+      const togOverlay = document.getElementById('togOverlay');
+      const togConfetti = document.getElementById('togConfetti');
+      const togRemove = document.getElementById('togRemove');
+      const spinDuration = document.getElementById('spinDuration');
+      if (togOverlay) togOverlay.classList.toggle('on', !!settings.overlay);
+      if (togConfetti) togConfetti.classList.toggle('on', !!settings.confetti);
+      if (togRemove) togRemove.classList.toggle('on', !!settings.remove);
+      if (spinDuration) spinDuration.value = String(settings.spinDuration);
+    }
+
+    function toggleSetting(name) {
+      settings[name] = !settings[name];
+      save(); syncSettingsUI();
+    }
+
+    function handleSpinDurationChange() {
+      settings.spinDuration = document.getElementById('spinDuration')?.value || DEFAULT_SETTINGS.spinDuration;
+      save();
+    }
+
+    function switchTab(name, el) {
+      if (!el) return;
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('panel-' + name)?.classList.add('active');
+    }
+
+    function spin() {
+      if (spinning || choices.length < 1) return;
+
+      // If only one choice, just announce it without animating meaninglessly
+      if (choices.length === 1) {
+        const winner = choices[0];
+        totalSpins++;
+        winnerCounts[winner] = (winnerCounts[winner] || 0) + 1;
+        history.unshift({ winner, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), fullTime: new Date().toLocaleString(), spin: totalSpins, color: COLORS[0], pool: 1 });
+        if (history.length > 50) history.pop();
+        lastWinnerIndex = 0;
+        save(); renderAll(); setSpinButtonsState();
+
+        const removeAndSpinBtn = document.getElementById('removeAndSpinBtn');
+        if (removeAndSpinBtn) removeAndSpinBtn.disabled = true;
+
+        if (settings.overlay) {
+          document.getElementById('overlayWinner').textContent = winner;
+          document.getElementById('overlaySpin').textContent = totalSpins;
+          document.getElementById('overlayProb').textContent = '1 in 1';
+          document.getElementById('winnerOverlay').classList.add('show');
+          document.body.classList.add('modal-open');
+        } else {
+          showResultCards(winner);
+          if (settings.remove) { choices.splice(0,1); lastWinnerIndex = null; save(); renderAll(); }
+        }
+        if (settings.confetti) launchConfetti();
+        return;
+      }
+
+      spinning = true;
+      lastWinnerIndex = null;
+      setSpinButtonsState();
+      hideResultCards();
+
+      const duration = parseInt(settings.spinDuration || '3500', 10);
+      const totalRot = (5 + Math.random() * 5) * 2 * Math.PI + Math.random() * 2 * Math.PI;
+      const start = performance.now();
+      const startAngle = wheelAngle;
+
+      function easeOut(t) { return 1 - Math.pow(1-t,4); }
+
+      function frame(now) {
+        const p = Math.min((now - start) / duration, 1);
+        wheelAngle = startAngle + easeOut(p) * totalRot;
+        drawAll();
+
+        if (p < 1) { requestAnimationFrame(frame); return; }
+
+        spinning = false;
+
+        const n = choices.length;
+        const slice = (2*Math.PI) / n;
+        const norm = (((-wheelAngle % (2*Math.PI)) + (2*Math.PI)) % (2*Math.PI));
+        const wi = Math.floor(norm / slice) % n;
+        const winner = choices[wi];
+
+        lastWinnerIndex = wi;
+        totalSpins++;
+        winnerCounts[winner] = (winnerCounts[winner] || 0) + 1;
+
+        history.unshift({
+          winner, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+          fullTime: new Date().toLocaleString(), spin: totalSpins,
+          color: COLORS[wi % COLORS.length], pool: n
+        });
+        if (history.length > 50) history.pop();
+
+        save(); renderAll(); setSpinButtonsState();
+
+        const removeAndSpinBtn = document.getElementById('removeAndSpinBtn');
+        if (removeAndSpinBtn) removeAndSpinBtn.disabled = (choices.length - 1) < 1;
+
+        if (settings.overlay) {
+          document.getElementById('overlayWinner').textContent = winner;
+          document.getElementById('overlaySpin').textContent = totalSpins;
+          document.getElementById('overlayProb').textContent = `1 in ${n}`;
+          document.getElementById('winnerOverlay').classList.add('show');
+          document.body.classList.add('modal-open');
+        } else {
+          showResultCards(winner);
+          if (settings.remove) { choices.splice(wi,1); lastWinnerIndex = null; save(); renderAll(); }
+        }
+
+        if (settings.confetti) launchConfetti();
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    function closeOverlay() {
+      document.getElementById('winnerOverlay').classList.remove('show');
+      document.body.classList.remove('modal-open');
+      drawAll();
+    }
+
+    function removeAndSpin() {
+      const overlayWinner = document.getElementById('overlayWinner').textContent;
+      const i = choices.indexOf(overlayWinner);
+      if (i >= 0) { choices.splice(i,1); lastWinnerIndex = null; save(); renderAll(); }
+      closeOverlay();
+      if (choices.length >= 1) { setTimeout(spin, 260); }
+      else { setSpinButtonsState(); }
+    }
+
+    function addChoice(src) {
+      const id = src === 'sidebar' ? 'sidebarInput' : 'mobileInput';
+      const inp = document.getElementById(id);
+      if (!inp) return;
+
+      const val = normalizeChoice(inp.value);
+      inp.value = '';
+      if (!val) return;
+
+      if (choices.length >= 20) {
+        inp.placeholder = 'Max 20 choices';
+        setTimeout(() => { inp.placeholder = 'Add a choice…'; }, 2000);
+        return;
+      }
+
+      if (hasDuplicate(val)) {
+        inp.placeholder = 'Already added';
+        setTimeout(() => { inp.placeholder = 'Add a choice…'; }, 1500);
+        return;
+      }
+
+      choices.push(val);
+      lastWinnerIndex = null;
+      save(); renderAll();
+    }
+
+    function removeChoice(i) {
+      // Allow removing down to 0 (empty wheel)
+      choices.splice(i,1);
+      if (editingChoiceIndex === i) editingChoiceIndex = null;
+      else if (editingChoiceIndex > i) editingChoiceIndex--;
+      lastWinnerIndex = null;
+      save(); renderAll();
+    }
+
+    function startEditChoice(i) {
+      editingChoiceIndex = i; renderAll();
+      setTimeout(() => { const inp = document.getElementById(`choiceEditInput-${i}`); inp?.focus(); inp?.select(); }, 0);
+    }
+
+    function cancelEditChoice() { editingChoiceIndex = null; renderAll(); }
+
+    function saveEditChoice(i) {
+      const input = document.getElementById(`choiceEditInput-${i}`);
+      if (!input) return;
+      const val = normalizeChoice(input.value);
+      if (!val) { cancelEditChoice(); return; }
+      if (hasDuplicate(val, i)) { input.select(); return; }
+      choices[i] = val;
+      editingChoiceIndex = null;
+      lastWinnerIndex = null;
+      save(); renderAll();
+    }
+
+    function handleChoiceEditKey(event, i) {
+      if (event.key === 'Enter') { event.preventDefault(); saveEditChoice(i); }
+      else if (event.key === 'Escape') { event.preventDefault(); cancelEditChoice(); }
+    }
+
+    function clearChoices() {
+      if (choices.length === 0) return;
+      if (!confirm('Clear all choices?')) return;
+      choices = []; editingChoiceIndex = null; lastWinnerIndex = null;
+      save(); hideResultCards(); renderAll();
+    }
+
+    function clearHistory() {
+      history = []; totalSpins = 0; winnerCounts = {};
+      save(); renderAll();
+    }
+
+    function resetApp() {
+      if (!confirm('Reset the app to default choices and clear history?')) return;
+      choices = [...DEFAULT_CHOICES]; history = []; totalSpins = 0; winnerCounts = {};
+      wheelAngle = 0; spinning = false; editingChoiceIndex = null; lastWinnerIndex = null;
+      settings = { ...DEFAULT_SETTINGS };
+      save(); syncSettingsUI(); hideResultCards(); closeOverlay(); renderAll();
+    }
+
+    function shuffleChoices() {
+      if (choices.length < 2) return;
+      for (let i = choices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i+1));
+        [choices[i], choices[j]] = [choices[j], choices[i]];
+      }
+      lastWinnerIndex = null; save(); renderAll();
+    }
+
+    function parseBulkChoices(text) {
+      return uniqueList(text.split(/[\n,]/g).map(s => s.trim()).filter(Boolean));
+    }
+
+    function openPasteModal() {
+      document.getElementById('pasteModal').classList.add('show');
+      document.body.classList.add('modal-open');
+      setTimeout(() => document.getElementById('pasteInput')?.focus(), 20);
+    }
+
+    function closePasteModal() {
+      document.getElementById('pasteModal').classList.remove('show');
+      document.body.classList.remove('modal-open');
+    }
+
+    function importChoicesFromModal() {
+      const input = document.getElementById('pasteInput');
+      if (!input) return;
+      const parsed = parseBulkChoices(input.value);
+      if (!parsed.length) { input.focus(); return; }
+      const existing = new Set(choices.map(c => normalizeChoice(c).toLowerCase()));
+      const incoming = parsed.filter(item => !existing.has(item.toLowerCase()));
+      const room = Math.max(0, 20 - choices.length);
+      if (room > 0) { choices = [...choices, ...incoming.slice(0, room)]; }
+      input.value = '';
+      lastWinnerIndex = null;
+      save(); renderAll(); closePasteModal();
+    }
+
+    function loadTemplate(t) {
+      choices = uniqueList(t.choices).slice(0, 20);
+      editingChoiceIndex = null; lastWinnerIndex = null;
+      save(); renderAll();
+      if (!isDesktop) switchTab('wheel', document.getElementById('tab-wheel'));
+    }
+
+    function renderChoiceList(containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = choices.map((c,i) => {
+        const isEditing = editingChoiceIndex === i;
+        if (isEditing) return `
+          <div class="choice-item">
+            <div class="choice-swatch" style="background:${COLORS[i%COLORS.length]}"></div>
+            <input id="choiceEditInput-${i}" class="choice-edit-input" value="${escapeHtml(c)}" onkeydown="handleChoiceEditKey(event,${i})" />
+            <button class="choice-save" onclick="saveEditChoice(${i})" title="Save">✓</button>
+            <button class="choice-cancel" onclick="cancelEditChoice()" title="Cancel">✕</button>
+          </div>`;
+        return `
+          <div class="choice-item">
+            <div class="choice-swatch" style="background:${COLORS[i%COLORS.length]}"></div>
+            <div class="choice-name" onclick="startEditChoice(${i})" title="Click to rename">${escapeHtml(c)}</div>
+            <button class="choice-edit" onclick="startEditChoice(${i})" title="Edit">✎</button>
+            <button class="choice-rm" onclick="removeChoice(${i})" title="Remove">✕</button>
+          </div>`;
+      }).join('');
+    }
+
+    function renderTemplates(containerId) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = TEMPLATES.map((t,i) => `<div class="template-pill" onclick="loadTemplate(TEMPLATES[${i}])">${escapeHtml(t.label)}</div>`).join('');
+    }
+
+    function renderHistory() {
+      const el = document.getElementById('historyContent');
+      if (!el) return;
+      if (!history.length) {
+        el.innerHTML = `
+          <div class="history-empty">
+            <div class="history-empty-icon"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="11" r="8.5" stroke="currentColor" stroke-width="1.3"/><line x1="11" y1="6" x2="11" y2="11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="11" y1="11" x2="15" y2="13.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+            <div class="hist-empty-title">No spins yet</div>
+            <div class="hist-empty-sub">Your spin history will appear here</div>
+          </div>`;
+        return;
+      }
+      el.innerHTML = `<div class="history-list">${history.slice(0,30).map(h => `
+        <div class="hist-item" title="${escapeHtml(h.fullTime||h.time)}">
+          <div class="hist-swatch" style="background:${h.color||'#7F77DD'}"></div>
+          <div class="hist-winner">${escapeHtml(h.winner)}</div>
+          <div class="hist-time">${escapeHtml(h.time)}</div>
+          <div class="hist-spin-num">#${h.spin}</div>
+        </div>`).join('')}</div>`;
+    }
+
+    function renderDesktopHistory() {
+      const el = document.getElementById('desktopHistoryPills');
+      if (!el) return;
+      if (!history.length) { el.innerHTML = '<span style="font-size:12px;color:var(--text3)">No spins yet</span>'; return; }
+      el.innerHTML = history.slice(0,6).map(h => `<div class="mhb-pill" title="${escapeHtml(h.fullTime||h.time)}"><strong>${escapeHtml(h.winner)}</strong> ${escapeHtml(h.time)}</div>`).join('');
+    }
+
+    function renderSidebarStats() {
+      const most = Object.entries(winnerCounts).sort((a,b) => b[1]-a[1])[0];
+      const s = document.getElementById('sbStatSpins');
+      const c = document.getElementById('sbStatChoices');
+      const m = document.getElementById('sbStatMost');
+      if (s) s.textContent = totalSpins;
+      if (c) c.textContent = choices.length;
+      if (m) m.textContent = most ? most[0] : '—';
+    }
+
+    function renderAll() {
+      renderChoiceList('sidebarChoices');
+      renderChoiceList('mobileChoices');
+      renderTemplates('sidebarTemplates');
+      renderTemplates('mobileTemplates');
+      renderHistory();
+      renderDesktopHistory();
+      renderSidebarStats();
+      const cc = document.getElementById('choiceCount');
+      if (cc) cc.textContent = `${choices.length} choice${choices.length !== 1 ? 's' : ''}`;
+      setSpinButtonsState();
+      drawAll();
+    }
+
+    function launchConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext('2d');
+      const particles = Array.from({length: 120}, () => ({
+        x: Math.random() * canvas.width, y: -10,
+        vx: (Math.random()-0.5)*6, vy: Math.random()*4+2,
+        color: COLORS[Math.floor(Math.random()*COLORS.length)],
+        size: Math.random()*8+4, rot: Math.random()*360, vr: (Math.random()-0.5)*8, life: 1
+      }));
+      const t0 = performance.now();
+      function frame(now) {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const elapsed = (now - t0) / 1000;
+        let alive = 0;
+        particles.forEach(p => {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.rot += p.vr;
+          p.life = Math.max(0, 1 - (elapsed - 0.8) / 1.5);
+          if (p.y > canvas.height + 20 || p.life <= 0) return;
+          alive++;
+          ctx.save(); ctx.globalAlpha = p.life;
+          ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+          ctx.fillStyle = p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size/2);
+          ctx.restore();
+        });
+        if (alive > 0 || elapsed < 0.8) requestAnimationFrame(frame);
+        else ctx.clearRect(0,0,canvas.width,canvas.height);
+      }
+      requestAnimationFrame(frame);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        if (document.getElementById('pasteModal').classList.contains('show')) closePasteModal();
+        else if (document.getElementById('winnerOverlay').classList.contains('show')) closeOverlay();
+        else if (editingChoiceIndex !== null) cancelEditChoice();
+      }
+    });
+
+    document.getElementById('pasteModal').addEventListener('click', e => { if (e.target.id === 'pasteModal') closePasteModal(); });
+    document.getElementById('winnerOverlay').addEventListener('click', e => { if (e.target.id === 'winnerOverlay') closeOverlay(); });
+
+    window.addEventListener('resize', () => { isDesktop = window.innerWidth >= 700; drawAll(); });
+
+    syncSettingsUI();
+    renderAll();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(r => console.log('SW registered', r.scope))
+          .catch(e => console.log('SW failed', e));
+      });
+    }
+  </script>
+</body>
+</html>
