@@ -1227,7 +1227,15 @@ function _drawHub(ctx,cx,cy,isMono) {
 }
 
 function drawAll() {
-  drawWheel(document.getElementById(isDesktop?'wheelCanvasDesktop':'wheelCanvas'), wheelAngle);
+  if (isDesktop) {
+    drawWheel(document.getElementById('wheelCanvasDesktop'), wheelAngle);
+  } else {
+    // Only draw on mobile if the wheel tab is active
+    const panel = document.getElementById('panel-wheel');
+    if (panel && panel.classList.contains('active')) {
+      drawWheel(document.getElementById('wheelCanvas'), wheelAngle);
+    }
+  }
 }
 
 function setSpinState() {
@@ -1273,6 +1281,7 @@ function switchTab(name,el) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('panel-'+name)?.classList.add('active');
+  if (name === 'wheel') drawAll();
 }
 
 // ── Weighted spin ──
