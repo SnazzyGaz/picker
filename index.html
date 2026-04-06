@@ -213,9 +213,17 @@ body.modal-open { overflow: hidden; }
 /* ─── Settings panel ─── */
 #panel-settings {
   padding: 14px 16px;
-  gap: 0;
+  gap: 10px;
   padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   background: var(--bg);
+}
+
+.settings-block {
+  background: var(--bg2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .panel-heading {
@@ -412,13 +420,6 @@ body.modal-open { overflow: hidden; }
 .hist-empty-title { font-size: 14px; font-weight: 500; color: var(--text2); }
 .hist-empty-sub { font-size: 12px; color: var(--text3); }
 
-.settings-block {
-  background: var(--bg2);
-  border: 0.5px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-  margin-bottom: 10px;
-}
 .settings-block-label {
   font-size: 10px;
   letter-spacing: 0.07em;
@@ -712,17 +713,18 @@ body.modal-open { overflow: hidden; }
 /* ─── Theme switcher ─── */
 .theme-switcher {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   background: var(--bg3);
   border: 0.5px solid var(--border);
   border-radius: var(--r-sm);
   padding: 3px;
+  flex-shrink: 0;
 }
 .theme-opt {
   flex: 1;
-  padding: 5px 8px;
+  padding: 5px 12px;
   border-radius: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text3);
   cursor: pointer;
@@ -730,26 +732,13 @@ body.modal-open { overflow: hidden; }
   text-align: center;
   border: none;
   background: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
+  white-space: nowrap;
 }
 .theme-opt:hover { color: var(--text2); }
 .theme-opt.active {
   background: var(--raise);
   color: var(--text);
   border: 0.5px solid var(--border2);
-}
-.theme-swatch {
-  display: flex;
-  gap: 2px;
-  align-items: center;
-}
-.theme-swatch span {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  display: inline-block;
 }
 </style>
 </head>
@@ -808,8 +797,7 @@ body.modal-open { overflow: hidden; }
           <button class="theme-opt active" data-theme="mono" onclick="setWheelTheme('mono')">Mono</button>
           <button class="theme-opt" data-theme="colour" onclick="setWheelTheme('colour')">Colour</button>
         </div>
-      </div>
-      <span class="section-label" style="margin-top:4px">Templates</span>
+      </div>      <span class="section-label" style="margin-top:4px">Templates</span>
       <div class="templates-row" id="sidebarTemplates"></div>
     </div>
   </div>
@@ -847,14 +835,8 @@ body.modal-open { overflow: hidden; }
       </div>
       <div class="wheel-hint">Use ± in Choices to weight options.</div>
       <div class="theme-switcher" style="max-width:340px;width:100%">
-        <button class="theme-opt active" data-theme="mono" onclick="setWheelTheme('mono')">
-          <div class="theme-swatch"><span style="background:#2e2e2e"></span><span style="background:#4a4a4a"></span><span style="background:#666"></span></div>
-          Mono
-        </button>
-        <button class="theme-opt" data-theme="colour" onclick="setWheelTheme('colour')">
-          <div class="theme-swatch"><span style="background:#5a8fbf"></span><span style="background:#5aaa7a"></span><span style="background:#c07840"></span></div>
-          Colour
-        </button>
+        <button class="theme-opt active" data-theme="mono" onclick="setWheelTheme('mono')">Mono</button>
+        <button class="theme-opt" data-theme="colour" onclick="setWheelTheme('colour')">Colour</button>
       </div>
     </div>
 
@@ -888,19 +870,11 @@ body.modal-open { overflow: hidden; }
         <div class="setting-row">
           <div class="setting-info">
             <div class="setting-name">Colour theme</div>
-            <div class="setting-desc">Monochrome or full colour segments</div>
+            <div class="setting-desc">Monochrome or full colour</div>
           </div>
-        </div>
-        <div class="setting-row" style="padding-top:4px;padding-bottom:12px">
-          <div class="theme-switcher" style="width:100%">
-            <button class="theme-opt active" data-theme="mono" onclick="setWheelTheme('mono')">
-              <div class="theme-swatch"><span style="background:#2e2e2e"></span><span style="background:#4a4a4a"></span><span style="background:#666"></span></div>
-              Mono
-            </button>
-            <button class="theme-opt" data-theme="colour" onclick="setWheelTheme('colour')">
-              <div class="theme-swatch"><span style="background:#5a8fbf"></span><span style="background:#5aaa7a"></span><span style="background:#c07840"></span></div>
-              Colour
-            </button>
+          <div class="theme-switcher">
+            <button class="theme-opt active" data-theme="mono" onclick="setWheelTheme('mono')">Mono</button>
+            <button class="theme-opt" data-theme="colour" onclick="setWheelTheme('colour')">Colour</button>
           </div>
         </div>
       </div>
@@ -979,14 +953,8 @@ body.modal-open { overflow: hidden; }
       </div>
       <div class="wheel-hint">Use ± to weight choices in the sidebar.</div>
       <div class="theme-switcher" style="max-width:300px;width:100%">
-        <button class="theme-opt active" data-theme="mono" onclick="setWheelTheme('mono')">
-          <div class="theme-swatch"><span style="background:#2e2e2e"></span><span style="background:#4a4a4a"></span><span style="background:#666"></span></div>
-          Mono
-        </button>
-        <button class="theme-opt" data-theme="colour" onclick="setWheelTheme('colour')">
-          <div class="theme-swatch"><span style="background:#5a8fbf"></span><span style="background:#5aaa7a"></span><span style="background:#c07840"></span></div>
-          Colour
-        </button>
+        <button class="theme-opt active" data-theme="mono" onclick="setWheelTheme('mono')">Mono</button>
+        <button class="theme-opt" data-theme="colour" onclick="setWheelTheme('colour')">Colour</button>
       </div>
     </div>
 
